@@ -7,5 +7,8 @@ def test_value_raw(value):
     else:
         return 'The value is too big!'
 
-def test_value_new(value):
+def test_value_ifelse(value):
     return 'The value is ' + ('just right.' if value < 100 else 'too big!')
+
+def test_value_bool(value):
+    return 'The value is ' + (value < 100 and 'just right.' or 'too big!')
