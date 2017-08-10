@@ -2,7 +2,6 @@
 # coding=utf-8
 
 from collections import namedtuple
-import inspect
 
 Customer = namedtuple('Customer', 'name fidelity')
 class LineItem(object):
