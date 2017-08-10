@@ -10,7 +10,7 @@ def clock(func):
         t0 = time.time()
         result = func(*args, **kwargs)
         elasped = time.time() - t0
-        name = func.__name_
+        name = func.__name__
         arg_str = []
         if args:
             arg_str.append(', '.join(repr(arg) for arg in args))
