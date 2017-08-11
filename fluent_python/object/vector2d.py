@@ -32,9 +32,19 @@ class vector2d(object):
 
     def __bool__(self):
         return bool(abs(self))
+    
+    def __angle(self):
+        return math.atan2(self.y, self.x)
 
     def __format__(self, fmt_spec = ''):
-        components = (format(c, fmt_spec) for c in self)
-        return '({}, {})'.format(*components)
+        if fmt_spec.endswith('p'):
+            fmt_spec = fmt_spec[:-1]
+            coords = (abs(self), self.__angle())
+            outer_fmt = '<{}, {}>'
+        else:
+            coords = self
+            outer_fmt = '({}, {})'
+        components = (format(c, fmt_spec) for c in coords)
+        return outer_fmt.format(*components)
 
 
