@@ -2,6 +2,8 @@
 # encoding=utf-8
 
 class vector2d(object):
+
+    __slots__ = ('__x', '__y')
     def __init__(self, x, y):
         self.__x = float(x)
         self.__y = float(y)
