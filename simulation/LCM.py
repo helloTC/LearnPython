@@ -52,7 +52,7 @@ def neg_exp_distribute(mean_time, U):
 
 if __name__ == '__main__':
 
-    h_count = 5
+    h_count = 50
 
     x0_iat = 1155192169
     # interarrival time series
@@ -80,10 +80,12 @@ if __name__ == '__main__':
 
     st = neg_exp_distribute(8, un_st)
     
-#    queue_time_series = []
-#     # the average time in queue
-#     for i in np.arange(1, len(iat)):
-#         queue_time_series.append(sum(st[:i]) - sum(iat[:(i+1)]))
+    queue_time_series = []
+    # the average time in queue
+    for i in np.arange(1, len(iat)):
+        queue_time_series.append(sum(st[:i]) - sum(iat[1:(i+1)]))
+    queue_time_series[queue_time_series<0] = 0
+    avg_queue_time = np.mean(queue_time_series)
      
      
     # the average time being serviced
