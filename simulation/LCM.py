@@ -49,6 +49,76 @@ def neg_exp_distribute(mean_time, U):
     """
     return [-1.0*mean_time*math.log(u) for u in U]
 
+class compute_avg_time(object):
+    def __init__(self, iat, st):
+        """
+        A class to compute varied average time
+        Initialization
+        
+        Parameters:
+        -----------
+        iat: interarrival time series
+        st: service time series  (of each customer)
+        """
+        self._iat = iat
+        self._st = st
+        self._custom_num = len(iat)
+
+    def avg_queue_time(self):
+        """
+        Compute the average queue time
+        To each customer (the ith), their queue time will be
+        sigma(st:st from 1 to i-1) - sigma(iat:iat from 2 to i)
+        if queue time smaller than 0, that means to that customer, he/she needn't wait for a serve
+        For example, guess we have list as:
+
+        iat 4 3 2 2
+        st  2 6 4 1
+
+        the queue time of each subject will be
+        0 0 3 5
+
+        This function has been simplified
+
+        Returns:
+        --------
+        avg_queue_time: the average queue time
+        """
+        queue_time_series = []
+        for i in np.arange(1, self._custom_num):
+            queue_time_series.append(np.sum(self._st[:i]) - np.sum(self._iat[1:(i+1)]))
+        queue_time_series[queue_time_series<0] = 0
+        return np.mean(queue_time_series)
+
+    def avg_service_time(self):
+        """
+        Compute the average service time
+
+        the average service time is the mean of service time
+
+        Returns:
+        --------
+        avg_service_time: the average service time
+        """
+        return np.mean(self._st)
+
+    def avg_system_time(self):
+        """
+        Compute the average system time
+
+        if there's larger summation of interarrival time than service time except the last one, whole system time will be all of the interarrival time + service time of the last customer(System must wait for the last one)
+        if there's smaller summation of interarrival time than service time except the last one, whole system time will be all of the service time + interarrival time of the first customer(System must wait for the first one to come)
+
+        Returns:
+        --------
+        avg_sys_time: average system time  
+        """
+        if np.sum(self._iat) < np.sum(self._st[:-2]):
+            avg_sys_time = (np.sum(self._st) + self._iat[0])/self._custom_num
+        else:
+            avg_sys_time = (np.sum(self._iat) + st[-1])/self._custom_num
+        return avg_sys_time
+
 
 if __name__ == '__main__':
 
@@ -80,25 +150,9 @@ if __name__ == '__main__':
 
     st = neg_exp_distribute(8, un_st)
     
-    queue_time_series = []
-    # the average time in queue
-    for i in np.arange(1, len(iat)):
-        queue_time_series.append(sum(st[:i]) - sum(iat[1:(i+1)]))
-    queue_time_series[queue_time_series<0] = 0
-    avg_queue_time = np.mean(queue_time_series)
-     
-     
-    # the average time being serviced
-    avg_st_time = np.mean(st)    
-
-    # the average time in system
-    if np.sum(iat) < np.sum(st[:-2]):
-        avg_time = (np.sum(st) + iat[0])/len(iat)
-    else:
-        avg_time = (np.sum(iat) + st[-1])/len(iat)
-   
-
-
-
-
+    # the average time
+    cat_cls = compute_avg_time(iat, st)
+    avg_queue_time = cat_cls.avg_queue_time()
+    avg_service_time = cat_cls.avg_service_time()
+    avg_system_time = cat_cls.avg_system_time()
 
