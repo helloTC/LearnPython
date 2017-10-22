@@ -25,6 +25,20 @@ class GenDistribution(object):
         """
         return a+(b-a)*random.random()
 
+    def exponential(self, beta):
+        """
+        Generate random number that satisfied to uniform distribution
+        
+        Parameters:
+        -----------
+        beta: mean
+
+        Return:
+        -------
+        x: random number that satisfied to exponential distribution
+        """
+        return -1.0*beta*math.log(random.random())
+
     def gamma(self, alpha, beta):
         """
         Generate random number that satisfied to gamma distribution
@@ -82,8 +96,7 @@ class GenDistribution(object):
                         continue
             elif alpha == 1:
                 # Exponential distribution
-                u = random.random()
-                x = -1.0*beta*math.log(u)
+                x = self.exponential(beta)
                 break
             else:
                 raise Exception("Wrong range of alpha")
