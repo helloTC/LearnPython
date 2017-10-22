@@ -56,6 +56,21 @@ class GenDistribution(object):
         log_u = [math.log(ui) for ui in u]
         return -1.0*beta*sum(log_u)/m
 
+    def weibull(self, alpha, beta):
+        """
+        Generate random number that satisfied to gamma distribution
+
+        Parameters:
+        ------------
+        alpha: parameter alpha of weibull distribution
+        beta: parameter beta of weibull distribution
+
+        Return:
+        --------
+        x: random number that satisfied to weibull distribution
+        """
+        return beta*(-1.0*random.random())**(1.0/alpha)
+
     def gamma(self, alpha, beta):
         """
         Generate random number that satisfied to gamma distribution
