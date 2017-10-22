@@ -10,6 +10,21 @@ class GenDistribution(object):
         """
         pass
 
+    def uniform(self, a, b):
+        """
+        Generate random number that satisfied to uniform distribution
+
+        Parameters:
+        -----------
+        a: parameters of uniform distribution (U(a, b))
+        b: parameters of uniform distribution (U(a, b))
+
+        Return:
+        --------
+        x: random number that satisfied to uniform distribution 
+        """
+        return a+(b-a)*random.random()
+
     def gamma(self, alpha, beta):
         """
         Generate random number that satisfied to gamma distribution
@@ -19,7 +34,7 @@ class GenDistribution(object):
         alpha: shape parameter alpha
         beta: inverse scale (rate) parameter beta (beta = 1/theta)
 
-        return:
+        Return:
         -------
         x: random number that satisfied to gamma distribution
         """
@@ -97,7 +112,7 @@ class GenDistribution(object):
         return x1, x2
 
 if __name__ == "__main__":
-    sample_number = 1000
+    sample_number = 10000
     gd_cls = GenDistribution()
     x1 = []
     x2 = []
