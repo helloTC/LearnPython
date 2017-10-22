@@ -39,6 +39,23 @@ class GenDistribution(object):
         """
         return -1.0*beta*math.log(random.random())
 
+    def m_erlang(self, m, beta):
+        """
+        Generate random number that satisfied to m-Erlang distribution
+
+        Parameters:
+        -----------
+        m: m
+        beta: mean of each exponential distribution
+
+        Return:
+        -------
+        x: random number that satisfied to m_erlang distribution 
+        """
+        u = [random.random() for i in range(m)]
+        log_u = [math.log(ui) for ui in u]
+        return -1.0*beta*sum(log_u)/m
+
     def gamma(self, alpha, beta):
         """
         Generate random number that satisfied to gamma distribution
