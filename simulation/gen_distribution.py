@@ -134,6 +134,24 @@ class GenDistribution(object):
                 raise Exception("Wrong range of alpha")
         return x
 
+    def beta(self, alpha1, alpha2):
+        """
+        Generate random number that satisfied to beta distribution
+
+        Parameters:
+        -----------
+        alpha1: parameter of beta distribution
+        alpha2: parameter of beta distribution
+
+        Return:
+        -------
+        x: random number that satisfied to beta distribution
+        """
+        Y1 = self.gamma(alpha1, 1)
+        Y2 = self.gamma(alpha2, 1)
+        x = 1.0*Y1/(Y1+Y2)
+        return x
+    
     def normal(self, mean = 0, std = 1):
         """
         Generate random number that satisfied to gamma distribution
