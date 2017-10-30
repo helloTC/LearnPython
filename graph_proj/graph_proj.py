@@ -17,9 +17,7 @@ stablept = set()
 allpt = set(range(nodenum))
 restpt = allpt.difference(green_collect.union(blue_collect))
 
-i = 0
 while len(restpt)!=0:
-    i += 1
     green_sdpt = random.choice(list(restpt))
     stablept.add(green_sdpt)
     green_collect.add(green_sdpt)
