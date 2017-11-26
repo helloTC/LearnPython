@@ -97,9 +97,9 @@ class compute_avg_time(object):
         self._st = st
         self._custom_num = len(iat)
 
-    def avg_queue_time(self):
+    def queue_time(self):
         """
-        Compute the average queue time
+        Compute the queue time series
         To each customer (the ith), their queue time will be
         sigma(st:st from 1 to i-1) - sigma(iat:iat from 2 to i)
         if queue time smaller than 0, that means to that customer, he/she needn't wait for a serve
@@ -115,7 +115,7 @@ class compute_avg_time(object):
 
         Returns:
         --------
-        avg_queue_time: the average queue time
+        queue_time: the average queue time
         """
         queue_time_series = []
         queue_time_series.append(0)
@@ -125,7 +125,14 @@ class compute_avg_time(object):
             for i in np.arange(1, self._custom_num):
                 queue_time_series.append(np.sum(self._st[:i]) - np.sum(self._iat[1:(i+1)]))
             queue_time_series[queue_time_series<0] = 0
-            return np.mean(queue_time_series)
+            return queue_time_series
+ 
+    def avg_queue_time(self):
+        """
+        Return series of queue time of each customer on average
+        """
+        queue_time_series = self.queue_time()
+        return np.mean(queue_time_series)
 
     def avg_service_time(self):
         """
@@ -162,7 +169,7 @@ class compute_avg_time(object):
 
 if __name__ == '__main__':
 
-    customer_count = 50
+    customer_count = 10
 
     x0_iat = 1155192169
     # interarrival time series
@@ -179,7 +186,7 @@ if __name__ == '__main__':
         
     x0_st = 1806794933
     # serice time series
-    st_gen = lcm(16807, 0, 2147483647, 1806794933)
+    st_gen = lcm(16807, 0, 2147483647, x0_st)
     # generate first 50 random numbers and Xn (Xn will contains 51 numbers) 
     st_rd = [st_gen.next() for i in range(customer_count-1)]
     
@@ -200,3 +207,57 @@ if __name__ == '__main__':
         avg_service_time.append(cat_cls.avg_service_time())
         avg_system_time.append(cat_cls.avg_system_time())
 
+    # estimate average time in queue and its corresponding variance, and its confidence interval using NBM (non-overlapping batch method) and OBM (overlapping batch method)
+    # Batch size = 100
+    # Batch number = 100
+    # window size = 100, to NBM, list size = 100*100 = 10,000
+    #                    to OBM, list size = 199
+    iat_nbm_rd = [iat_gen.next() for i in range(10000-1)]
+    st_nbm_rd = [st_gen.next() for i in range(10000-1)]
+    iat_obm_rd = [iat_gen.next() for i in range(199-1)]
+    st_obm_rd = [iat_gen.next() for i in range(199-1)]
+
+    xn_nbm_iat = [j for i,j in iat_nbm_rd]
+    u0_nbm_iat = 1.0*x0_iat/2147483647
+    un_nbm_iat = [1.0*x/2147483647 for x in xn_nbm_iat]
+    un_nbm_iat = [u0_nbm_iat] + un_nbm_iat
+    nbm_iat = neg_exp_distribute(5, un_nbm_iat)
+
+    xn_nbm_st = [j for i,j in st_nbm_rd]
+    u0_nbm_st = 1.0*x0_st/2147483647
+    un_nbm_st = [1.0*x/2147483647 for x in xn_nbm_st]
+    un_nbm_st = [u0_nbm_st] + un_nbm_st
+    nbm_st = neg_exp_distribute(8, un_nbm_st)
+
+    xn_obm_iat = [j for i,j in iat_obm_rd]
+    u0_obm_iat = 1.0*x0_iat/2147483647
+    un_obm_iat = [1.0*x/2147483647 for x in xn_obm_iat]
+    un_obm_iat = [u0_obm_iat] + un_obm_iat
+    obm_iat = neg_exp_distribute(5, un_obm_iat)
+
+    xn_obm_st = [j for i,j in st_obm_rd]
+    u0_obm_st = 1.0*x0_st/2147483647
+    un_obm_st = [1.0*x/2147483647 for x in xn_obm_st]
+    un_obm_st = [u0_obm_st] + un_obm_st
+    obm_st = neg_exp_distribute(8, un_obm_st)
+
+    sep_nbm_iat = list_reshape_bywindow(nbm_iat, 100, 100)
+    sep_nbm_st = list_reshape_bywindow(nbm_st, 100, 100)
+    sep_obm_iat = list_reshape_bywindow(obm_iat, 100, 1)
+    sep_obm_st = list_reshape_bywindow(obm_st, 100, 1)
+
+    queue_nbm_time = []
+    queue_obm_time = []
+    for i in range(100):
+        cat_cls_nbm = compute_avg_time(sep_nbm_iat[i], sep_nbm_st[i])
+        cat_cls_obm = compute_avg_time(sep_obm_iat[i], sep_obm_st[i])
+        queue_nbm_time.append(cat_cls_nbm.queue_time())
+        queue_obm_time.append(cat_cls_obm.queue_time())
+
+    # nbm variance
+    xn_avg_nbm = np.mean(queue_nbm_time)
+    yn_avg_nbm = [np.mean(qnt) for qnt in queue_nbm_time]
+    dif_avg_nbm = [(yan - xn_avg_nbm)**2 for yan in yn_avg_nbm]
+    vb = 1.0*100/(100-1)*np.sum(dif_avg_nbm)
+    
+          
