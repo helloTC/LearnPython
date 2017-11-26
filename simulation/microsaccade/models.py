@@ -65,8 +65,8 @@ def microsaccades(stop_command_time, deltat_mean = 95, deltat_std = 40, deltas_m
         rb0 = 2*rb0
     m_point = 0
     M = []
-    M.append(m_point)
     t = []
+    M.append(m_point)
     t.append(deltat)
     t1 = t[0]
     is_success_canceled = False
@@ -77,14 +77,14 @@ def microsaccades(stop_command_time, deltat_mean = 95, deltat_std = 40, deltas_m
             M.append(m_point)
             t.append(t1)
         else:
-            print('afferent start time: {}, m: {}'.format(t1, m_point))
+            # print('afferent start time: {}, m: {}'.format(t1, m_point))
             # Afferent delay for stimulus onset processing: deltas
             for i in range(int(deltas/t_step)):
                 t1, m_point = linear_y(t1, t_step, rb0, m_point)
                 M.append(m_point)
                 t.append(t1)
             break
-    print('linear increment t: {}, m: {}, deltas: {}'.format(t1, m_point, deltas))
+    # print('linear increment t: {}, m: {}, deltas: {}'.format(t1, m_point, deltas))
     rb = 1.0*rb0
     i = 0
     expo_flag = False
