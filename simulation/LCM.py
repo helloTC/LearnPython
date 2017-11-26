@@ -49,6 +49,39 @@ def neg_exp_distribute(mean_time, U):
     """
     return [-1.0*mean_time*math.log(u) for u in U]
 
+def list_reshape_bywindow(longlist, windowlen, step=1):
+    """
+    A function to use window intercept long list into several component
+
+    A list could like below,
+    [a, b, c, d, e]
+    Output could be
+    [[a,b], [c,d]]
+    where windowlen as 2, 
+          step as 2
+
+    Parameters:
+    ------------
+    longlist: original long list
+    windowlen: window length
+    step: by default is 1, to use overlapping batch method, step as 1,
+                           to use non-overlapping batch method, step as windowlen
+
+    Returns:
+    --------
+    ic_list: intercept list
+
+    Example:
+    --------
+    >>> ic_list = list_reshape_bywindow(longlist, windowlen = 3)
+    """
+    ic_list = []
+    i = 0
+    while len(longlist)>=(windowlen+step*i): 
+        ic_list.append(longlist[(step*i):(windowlen+step*i)]) 
+        i+=1
+    return ic_list
+    
 class compute_avg_time(object):
     def __init__(self, iat, st):
         """
