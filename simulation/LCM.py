@@ -258,6 +258,17 @@ if __name__ == '__main__':
     xn_avg_nbm = np.mean(queue_nbm_time)
     yn_avg_nbm = [np.mean(qnt) for qnt in queue_nbm_time]
     dif_avg_nbm = [(yan - xn_avg_nbm)**2 for yan in yn_avg_nbm]
-    vb = 1.0*100/(100-1)*np.sum(dif_avg_nbm)
+    vb_nbm = (1.0*100/(100-1))*np.sum(dif_avg_nbm)
+
+    # nbm confidence interval
+    # t99,0.975 = 1.984
+    # xn_avg_nbm +- 1.984*np.sqrt(vb_nbm/100)
     
-          
+    # obm variance
+    xn_avg_obm = np.mean(queue_obm_time)
+    yn_avg_obm = [np.mean(qot) for qot in queue_obm_time]
+    dif_avg_obm = [(yao - xn_avg_obm)**2 for yao in yn_avg_obm]
+    vb_obm = (1.0*199*100/((199-100+1)*(199-100)))*np.sum(dif_avg_nbm)
+
+    # obm confidence interval
+    # t199,0.975 ~= 1.984
