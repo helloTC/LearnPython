@@ -100,16 +100,18 @@ class compute_avg_time(object):
     def queue_time(self):
         """
         Compute the queue time series
-        To each customer (the ith), their queue time will be
-        sigma(st:st from 1 to i-1) - sigma(iat:iat from 2 to i)
+
+        The idea for queue time computation is relate to an iteration analysis
+        the queue time is equal to summation of the interarrival time of last one, and the service time of last one, and queue time of last one minus the interarrival time of present one.
         if queue time smaller than 0, that means to that customer, he/she needn't wait for a serve
+
         For example, guess we have list as:
 
         iat 4 3 2 2
         st  2 6 4 1
 
         the queue time of each subject will be
-        0 0 3 5
+        0 0 4 6
 
         This function has been simplified
 
@@ -118,14 +120,22 @@ class compute_avg_time(object):
         queue_time: the average queue time
         """
         queue_time_series = []
-        queue_time_series.append(0)
         if self._custom_num < 2:
             return 0
         else:
-            for i in np.arange(1, self._custom_num):
-                queue_time_series.append(np.sum(self._st[:i]) - np.sum(self._iat[1:(i+1)]))
-            queue_time_series[queue_time_series<0] = 0
-            return queue_time_series
+            for i in range(self._custom_num):
+                if i==0:
+                    queue_time_tmp = 0
+                    queue_time_series.append(queue_time_tmp)
+                else:
+                    iat_now = np.sum(self._iat[:(i+1)])
+                    iat_lastperson = np.sum(self._iat[:i])
+                    st_lastperson = self._st[i-1]
+                    queue_time_tmp = st_lastperson + iat_lastperson + queue_time_tmp - iat_now
+                    if queue_time_tmp < 0:
+                        queue_time_tmp = 0
+                    queue_time_series.append(queue_time_tmp)
+        return queue_time_series
  
     def avg_queue_time(self):
         """
