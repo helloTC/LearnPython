@@ -81,8 +81,18 @@ def list_reshape_bywindow(longlist, windowlen, step=1):
         ic_list.append(longlist[(step*i):(windowlen+step*i)]) 
         i+=1
     return ic_list
-    
-class compute_avg_time(object):
+
+def system_time(mean_time, a, c, m, X0, customer_count = 100):
+    """
+    Generate system time
+    """
+    r_gen = lcm(a, c, m, X0)
+    rd = [r_gen.next() for i in range(customer_count-1)]
+    un = [i for i, j in rd]
+    time = neg_exp_distribute(mean_time, un)
+    return time
+
+class MM1_system(object):
     def __init__(self, iat, st):
         """
         A class to compute varied average time
@@ -176,43 +186,53 @@ class compute_avg_time(object):
                 avg_sys_time = (np.sum(self._iat) + st[-1])/self._custom_num
             return avg_sys_time
 
+class MM2_system(object):
+    def __init__(self, iat, st):
+        """
+        
+        """
+        self._iat = iat
+        self._st = st
+        self._custom_num = len(iat)
+    
+    def com_queue_time(self):
+        """
+        
+        """
+        idolmach_time = [0, 0]
+        mach_isidol = [True, True]
+        arr_time = [sum(self._iat[:(i+1)]) for i in range(len(self._iat))]
+        queue_time = []
+        for i in range(self._custom_num):
+            if np.any(mach_isidol):
+                idolmach_time[mach_isidol.index(True)] = arr_time[i] + self._st[i] 
+                mach_isidol[mach_isidol.index(True)] = False
+                queue_time.append(0)
+            else:
+                if arr_time[i] > np.min(idolmach_time):
+                    queue_time.append(0)
+                    idolmach_time[idolmach_time.index(np.min(idolmach_time))] = arr_time[i] + self._st[i]
+                else:
+                    queue_time.append(np.min(idolmach_time) - arr_time[i])
+                    idolmach_time[idolmach_time.index(np.min(idolmach_time))] = np.min(idolmach_time) + self._st[i]
+            print('{}'.format(idolmach_time))
+        return queue_time, idolmach_time
 
 if __name__ == '__main__':
 
-    customer_count = 10
-
+    customer_count = 100
     x0_iat = 1155192169
-    # interarrival time series
-    iat_gen = lcm(16807, 0, 2147483647, x0_iat)
-    # generate first 50 random numbers and Xn (Xn will contains 51 numbers)
-    iat_rd = [iat_gen.next() for i in range(customer_count-1)]
-
-    xn_iat = [j for i, j in iat_rd]
-    u0_iat = 1.0*x0_iat/2147483647
-    un_iat = [1.0*x/2147483647 for x in xn_iat]
-    un_iat = [u0_iat] + un_iat
-
-    iat = neg_exp_distribute(5, un_iat)
-        
+    iat = system_time(5, 16807, 0, 2147483647, x0_iat, customer_count)
     x0_st = 1806794933
-    # serice time series
-    st_gen = lcm(16807, 0, 2147483647, x0_st)
-    # generate first 50 random numbers and Xn (Xn will contains 51 numbers) 
-    st_rd = [st_gen.next() for i in range(customer_count-1)]
-    
-    xn_st = [j for i, j in st_rd]
-    u0_st = 1.0*x0_st/2147483647
-    un_st = [1.0*x/2147483647 for x in xn_st]
-    un_st = [u0_st] + un_st
-
-    st = neg_exp_distribute(8, un_st)
+    st = system_time(8, 16807, 0, 2147483637, x0_st, customer_count)
+        
    
     avg_queue_time = []
     avg_service_time = []
     avg_system_time = []
     for i in np.arange(0, customer_count):
         # the average time
-        cat_cls = compute_avg_time(iat[:(i+1)], st[:(i+1)])
+        cat_cls = MM1_system(iat[:(i+1)], st[:(i+1)])
         avg_queue_time.append(cat_cls.avg_queue_time())
         avg_service_time.append(cat_cls.avg_service_time())
         avg_system_time.append(cat_cls.avg_system_time())
@@ -222,6 +242,8 @@ if __name__ == '__main__':
     # Batch number = 100
     # window size = 100, to NBM, list size = 100*100 = 10,000
     #                    to OBM, list size = 199
+    iat_gen = lcm(16807, 0, 2147483647, 1155192169)
+    st_gen = lcm(16807, 0, 2147483647, 1806794933)
     iat_nbm_rd = [iat_gen.next() for i in range(10000-1)]
     st_nbm_rd = [st_gen.next() for i in range(10000-1)]
     iat_obm_rd = [iat_gen.next() for i in range(199-1)]
@@ -259,8 +281,8 @@ if __name__ == '__main__':
     queue_nbm_time = []
     queue_obm_time = []
     for i in range(100):
-        cat_cls_nbm = compute_avg_time(sep_nbm_iat[i], sep_nbm_st[i])
-        cat_cls_obm = compute_avg_time(sep_obm_iat[i], sep_obm_st[i])
+        cat_cls_nbm = MM1_system(sep_nbm_iat[i], sep_nbm_st[i])
+        cat_cls_obm = MM1_system(sep_obm_iat[i], sep_obm_st[i])
         queue_nbm_time.append(cat_cls_nbm.queue_time())
         queue_obm_time.append(cat_cls_obm.queue_time())
 
