@@ -146,6 +146,31 @@ class MM1_system(object):
                         queue_time_tmp = 0
                     queue_time_series.append(queue_time_tmp)
         return queue_time_series
+
+    def queue_time_by_idol_method(self):
+        """
+        A new solution to compute queue time using vision of machine idol time.
+        Same results to queue_time_series
+        """
+        idolmach_time = 0
+        mach_isidol = True
+        arr_time = [sum(self._iat[:(i+1)]) for i in range(self._custom_num)]
+        queue_time_series = []
+	for i in range(self._custom_num):
+            if mach_isidol:
+                idolmach_time = arr_time[i] + self._st[i]
+                mach_isidol = False
+                queue_time_series.append(0)
+            else:
+                if arr_time[i] > idolmach_time:
+                    queue_time_series.append(0)
+                    idolmach_time = arr_time[i] + self._st[i]
+                else:
+                    queue_time_series.append(idolmach_time - arr_time[i])
+                    idolmach_time = idolmach_time + self._st[i]
+                print('{}'.format(idolmach_time))
+        return queue_time_series, idolmach_time
+
  
     def avg_queue_time(self):
         """
@@ -189,34 +214,38 @@ class MM1_system(object):
 class MM2_system(object):
     def __init__(self, iat, st):
         """
-        
+        Initialization of MM2 system
         """
         self._iat = iat
         self._st = st
         self._custom_num = len(iat)
     
-    def com_queue_time(self):
+    def queue_time(self):
         """
-        
+        Computation of queue time
+
+        To solve problems of queue time in MM2 system, 
+        machine idol time was set to instruct when machine will be idol
+        If it exists machine to be idol, queue time should be 0, or queue time should be idolmach_time - arrive_time
         """
         idolmach_time = [0, 0]
         mach_isidol = [True, True]
-        arr_time = [sum(self._iat[:(i+1)]) for i in range(len(self._iat))]
-        queue_time = []
+        arr_time = [sum(self._iat[:(i+1)]) for i in range(self._custom_num)]
+        queue_time_series = []
         for i in range(self._custom_num):
             if np.any(mach_isidol):
                 idolmach_time[mach_isidol.index(True)] = arr_time[i] + self._st[i] 
                 mach_isidol[mach_isidol.index(True)] = False
-                queue_time.append(0)
+                queue_time_series.append(0)
             else:
                 if arr_time[i] > np.min(idolmach_time):
-                    queue_time.append(0)
+                    queue_time_series.append(0)
                     idolmach_time[idolmach_time.index(np.min(idolmach_time))] = arr_time[i] + self._st[i]
                 else:
-                    queue_time.append(np.min(idolmach_time) - arr_time[i])
+                    queue_time_series.append(np.min(idolmach_time) - arr_time[i])
                     idolmach_time[idolmach_time.index(np.min(idolmach_time))] = np.min(idolmach_time) + self._st[i]
             print('{}'.format(idolmach_time))
-        return queue_time, idolmach_time
+        return queue_time_series, idolmach_time
 
 if __name__ == '__main__':
 
