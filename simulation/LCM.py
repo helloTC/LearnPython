@@ -253,18 +253,17 @@ if __name__ == '__main__':
     x0_iat = 1155192169
     iat = system_time(5, 16807, 0, 2147483647, x0_iat, customer_count)
     x0_st = 1806794933
-    st = system_time(8, 16807, 0, 2147483637, x0_st, customer_count)
+    st = system_time(4, 16807, 0, 2147483637, x0_st, customer_count)
         
    
     avg_queue_time = []
     avg_service_time = []
     avg_system_time = []
-    for i in np.arange(0, customer_count):
-        # the average time
-        cat_cls = MM1_system(iat[:(i+1)], st[:(i+1)])
-        avg_queue_time.append(cat_cls.avg_queue_time())
-        avg_service_time.append(cat_cls.avg_service_time())
-        avg_system_time.append(cat_cls.avg_system_time())
+    cat_cls = MM1_system(iat, st)
+    queue_time = cat_cls.queue_time()
+    avg_queue_time.append(cat_cls.avg_queue_time())
+    avg_service_time.append(cat_cls.avg_service_time())
+    avg_system_time.append(cat_cls.avg_system_time())
 
     # estimate average time in queue and its corresponding variance, and its confidence interval using NBM (non-overlapping batch method) and OBM (overlapping batch method)
     # Batch size = 100
@@ -333,3 +332,13 @@ if __name__ == '__main__':
 
     # obm confidence interval
     # t199,0.975 ~= 1.984
+
+
+    x0_iat_mm2 = 1806794933
+    x0_st_mm2 = 1155192169
+    iat_mm2 = system_time(5, 16807, 0, 2147483647, x0_iat_mm2, customer_count)
+    st_mm2 = system_time(8, 16807, 0, 2147483647, x0_st_mm2, customer_count) 
+    cat_cls_mm2 = MM2_system(iat_mm2, st_mm2)
+    mm2_queue_time, _ = cat_cls_mm2.queue_time()
+
+
