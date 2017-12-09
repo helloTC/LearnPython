@@ -87,7 +87,7 @@ def system_time(mean_time, a, c, m, X0, customer_count = 100):
     Generate system time
     """
     r_gen = lcm(a, c, m, X0)
-    rd = [r_gen.next() for i in range(customer_count-1)]
+    rd = [r_gen.next() for i in range(customer_count)]
     un = [i for i, j in rd]
     time = neg_exp_distribute(mean_time, un)
     return time
