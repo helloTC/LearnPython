@@ -2,14 +2,24 @@ import networkx as nx
 import random
 import operator
 import numpy as np
+from ATT.algorithm import surf_tools, tools
+import matplotlib.pyplot as plt
+from ATT.util import plotfig
+from scipy import stats
 
 class light_smallwd(object):
     def __init__(self, nodenum, neighk, p):
         G = nx.watts_strogatz_graph(nodenum, neighk, p)
         self._G = G
         self._nodenum = nodenum
+    
+    def get_graph(self):
+        """
+        Get graph
+        """
+        return self._G
 
-    def pointlight(self, strategy = 'degree', option = 'descend'):
+    def pointlight(self, strategy = 'degree'):
         """
         Function for exploring project of light_smallworld
         """
@@ -23,9 +33,13 @@ class light_smallwd(object):
 
         while len(restpt) != 0:
             if strategy == 'degree':
-                green_sdpt = _extract_with_degree(self._G, restpt)
+                green_sdpt = _extract_with_degree(self._G, restpt, option = 'descend')
             elif strategy == 'random':
                 green_sdpt = random.choice(list(restpt))
+            elif strategy == 'hubvsrandom':
+                green_sdpt = _extract_with_degree(self._G, restpt)
+            elif strategy == 'hubvsworst':
+                green_sdpt = _extract_with_degree(self._G, restpt)
             else:
                 raise Exception('Bad parameters')
 
@@ -47,9 +61,13 @@ class light_smallwd(object):
                 break
 
             if strategy == 'degree':
-                blue_sdpt = _extract_with_degree(self._G, restpt, option = option)
+                blue_sdpt = _extract_with_degree(self._G, restpt, option = 'descend')
             elif strategy == 'random':
                 blue_sdpt = random.choice(list(restpt))
+            elif strategy == 'hubvsrandom':
+                blue_sdpt = random.choice(list(restpt))
+            elif strategy == 'hubvsworst':
+                blue_sdpt = _extract_with_degree(self._G, restpt, option = 'ascend')
             else:
                 raise Exception('Bad parameters')
 
@@ -123,13 +141,53 @@ if __name__ == '__main__':
     #     lscls.pointlight('random')
     #     numdif.append(lscls.collect_diff())
 # ---------------------------------------------------------
-    nodenum = 150
+    nodenum = 100
     neighk = 10
-    p = 0.2
+    p = 0.8
     
-    lscls = light_smallwd(nodenum, neighk, p)
-    lscls.pointlight('degree', option = 'descend')        
-    green_pt, blue_pt = lscls.get_seedpt()
-    green_collect, blue_collect = lscls.get_collect()
-   
+    j = 1
+    while 1:
+        print('iteration {}'.format(j))
+        j+=1
+        lscls = light_smallwd(nodenum, neighk, p)
+        G = lscls.get_graph()
+        diff_hubvsrandom = []
+        diff_random = []
+        lscls.pointlight('hubvsworst')
+        diff_hubvsworst = lscls.collect_diff()
+        for i in range(100):
+            # print('{}'.format(i))
+            lscls.pointlight('hubvsrandom')       
+            diff_hubvsrandom.append(lscls.collect_diff())
+            lscls.pointlight('random')
+            diff_random.append(lscls.collect_diff())  
+        diff_hubvsrandom = np.array(diff_hubvsrandom)
+        diff_random = np.array(diff_random)
+        p_sig = 1.0*len(diff_hubvsrandom[diff_hubvsrandom>diff_hubvsworst])/len(diff_hubvsrandom)
+        if p_sig<0.01:
+            break 
+    G_degree = np.array(G.degree().values()) 
+    largenode = np.argsort(G_degree)[-8:]
+    pos = nx.random_layout(G)
+    nx.draw(G, pos, node_color = 'r')
+    plt.show()
+    plt.figure()
+    nx.draw(G, pos, node_color = 'r')
+    nx.draw_networkx_nodes(G, pos, nodelist = largenode.tolist(), node_color = 'b')
+    plt.show()
 
+    m = surf_tools.GenAdjacentMatrix()
+    adjmatrix = m.from_edge(G.edges())
+    plotmat = plotfig.make_figfunction('mat')
+    plotmat(adjmatrix)    
+
+    plt.figure()
+    plt.hist(G_degree)
+    plt.show()
+
+    plotviolin = plotfig.make_figfunction('violin') 
+    diff_data = np.concatenate((np.expand_dims(diff_hubvsrandom,axis=-1).T, np.expand_dims(diff_random,axis=-1).T))
+    plotviolin(diff_data.T, xticklabels = ['StrategyVsRandom', 'Random'])
+   
+    plothist = plotfig.make_figfunction('hist')
+    plothist(diff_hubvsrandom, [], diff_hubvsworst, p_sig) 
