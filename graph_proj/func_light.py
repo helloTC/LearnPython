@@ -6,6 +6,7 @@ from ATT.algorithm import surf_tools, tools
 import matplotlib.pyplot as plt
 from ATT.util import plotfig
 from scipy import stats
+from ATT.iofunc import iofiles
 
 class light_smallwd(object):
     def __init__(self, nodenum, neighk, p):
@@ -97,6 +98,12 @@ class light_smallwd(object):
     def get_collect(self):
         return self.green_collect, self.blue_collect
 
+    def seed_degree(self):
+        return [G.degree()[i] for i in self.green_stablept], [G.degree()[i] for i in self.blue_stablept]
+
+    def total_seed_degree(self):
+        return np.sum(self.seed_degree()[0]), np.sum(self.seed_degree()[1])
+
 def _extract_with_degree(G, restpt, option = 'descend'):
     """
     """
@@ -142,11 +149,12 @@ if __name__ == '__main__':
     #     numdif.append(lscls.collect_diff())
 # ---------------------------------------------------------
     nodenum = 100
-    neighk = 10
-    p = 0.8
+    neighk = 6
+    p = 0.9
     
     j = 1
     while 1:
+        iter_time = 500
         print('iteration {}'.format(j))
         j+=1
         lscls = light_smallwd(nodenum, neighk, p)
@@ -155,7 +163,7 @@ if __name__ == '__main__':
         diff_random = []
         lscls.pointlight('hubvsworst')
         diff_hubvsworst = lscls.collect_diff()
-        for i in range(100):
+        for i in range(iter_time):
             # print('{}'.format(i))
             lscls.pointlight('hubvsrandom')       
             diff_hubvsrandom.append(lscls.collect_diff())
@@ -164,10 +172,21 @@ if __name__ == '__main__':
         diff_hubvsrandom = np.array(diff_hubvsrandom)
         diff_random = np.array(diff_random)
         p_sig = 1.0*len(diff_hubvsrandom[diff_hubvsrandom>diff_hubvsworst])/len(diff_hubvsrandom)
-        if p_sig<0.01:
+        if (p_sig<0.01) & (len(diff_hubvsrandom[diff_hubvsrandom<0]) < 0.01*iter_time) & (np.min(diff_hubvsrandom)>-5):
             break 
+
+    G_edges = G.edges()
+    G_edges = [list(edge) for edge in G_edges]
+    gam_cls = surf_tools.GenAdjacentMatrix()
+    adjcent = gam_cls.from_edge(G.edges())
+    # Save files
+    iocsv_adjcent = iofiles.make_ioinstance('N100_P9_K6_G10_adj.csv')
+    iocsv_edges = iofiles.make_ioinstance('N100_P9_K6_G10_edges.csv')
+    iocsv_adjcent.save(adjcent)
+    iocsv_edges.save(np.array(G_edges))
+
     G_degree = np.array(G.degree().values()) 
-    largenode = np.argsort(G_degree)[-8:]
+    largenode = np.argsort(G_degree)[-6:]
     pos = nx.random_layout(G)
     nx.draw(G, pos, node_color = 'r')
     plt.show()
