@@ -104,6 +104,9 @@ class light_smallwd(object):
     def total_seed_degree(self):
         return np.sum(self.seed_degree()[0]), np.sum(self.seed_degree()[1])
 
+    def diff_degree(self):
+        return sum(self.seed_degree()[0]) - sum(lscls.seed_degree()[1])
+
 def _extract_with_degree(G, restpt, option = 'descend'):
     """
     """
@@ -161,6 +164,7 @@ if __name__ == '__main__':
         G = lscls.get_graph()
         diff_hubvsrandom = []
         diff_random = []
+        diff_random_degree = []
         lscls.pointlight('hubvsworst')
         diff_hubvsworst = lscls.collect_diff()
         for i in range(iter_time):
@@ -168,7 +172,8 @@ if __name__ == '__main__':
             lscls.pointlight('hubvsrandom')       
             diff_hubvsrandom.append(lscls.collect_diff())
             lscls.pointlight('random')
-            diff_random.append(lscls.collect_diff())  
+            diff_random.append(lscls.collect_diff()) 
+            diff_random_degree.append(lscls.diff_degree()) 
         diff_hubvsrandom = np.array(diff_hubvsrandom)
         diff_random = np.array(diff_random)
         p_sig = 1.0*len(diff_hubvsrandom[diff_hubvsrandom>diff_hubvsworst])/len(diff_hubvsrandom)
@@ -210,3 +215,6 @@ if __name__ == '__main__':
    
     plothist = plotfig.make_figfunction('hist')
     plothist(diff_hubvsrandom, [], diff_hubvsworst, p_sig) 
+
+    plotcorr = plotfig.make_figfunction('corr')
+    plotcorr(np.array(diff_random), np.array(diff_random_degree), ['Number of lights', 'difference of degree'])
