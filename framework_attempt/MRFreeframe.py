@@ -4,7 +4,7 @@ import numpy as np
 
 class Region(object):
     
-    _defaults = ['_name', '_layer', 'hemi', 'header', 'space']
+    _defaults = ['data', '_name', '_layer', 'hemi', 'header', 'space', 'shape', 'img']
 
     def __init__(self, source):
         self._source = source
@@ -28,7 +28,7 @@ class Region(object):
     def layer(self, layernum):
         self._layer = layernum    
 
-    def setspace(self, space_name = 'MNI'):
+    def set_space(self, space_name = 'MNI'):
         self.space = space_name
         if space_name == 'MNI':
             self.shape = (91,109,91)
@@ -45,10 +45,14 @@ class Region(object):
     def get_data(self):
         self.img = nib.load(self._source)
         self.data = self.img.get_data()
-        self.shape = self.data.shape
-        self.sethemi()
+        self.set_hemi()
+        self.header = self.img.get_header()
 
-    def sethemi(self, hemi=None):
+    def get_shape(self):
+        if self.data is not None:
+            self.shape = self.data.shape
+
+    def set_hemi(self, hemi=None):
         if ('lh' in self._source) & ('rh' in self._source):
             self.hemi = 'both'
         elif ('lh' in self._source) & ('rh' not in self._source):
@@ -58,11 +62,12 @@ class Region(object):
         else:
             self.hemi = hemi
 
-    def get_header(self):
-        self.header = self.img.get_header()
-
-    def regionsize(self):
-        pass
+    def get_size(self):
+        self.size = []
+        if self.data is not None:
+            for i in range(self.data.shape[-1]):
+                self.size.append(self.data[...,i][self.data[...,i]!=0].shape[0])
+        return self.size
 
 class Geometry(Region):
     def __init__(self):
@@ -76,6 +81,7 @@ class Geometry(Region):
             self.face = nib.load(source).darrays[1].data
         else:
             raise Exception('Wrong data formats')
+        self.set_hemi()
 
     def calc_distance(self):
         pass
@@ -83,20 +89,23 @@ class Geometry(Region):
 class Morphology(Region):
     def __init__(self, source):
         super(Morphology, self).__init__(source)       
+        self._data_type()
 
     def get_data(self):
         if self._source.endswith(('.curv', '.sulc', '.volume', '.thickness', '.area')):
             self.data = np.expand_dims(freesurfer.read_morph_data(self._source),axis=-1)
-        elif self._source.endswith('.shape.gii'):
-            self.data = np.expand_dims(nib.load(self._source).darrays[0],axis=-1)
+        elif self._source.endswith(('.shape.gii', '.func.gii')):
+            self.data = np.expand_dims(nib.load(self._source).darrays[0].data,axis=-1)
         else:
-            raise Exception('Wrong data format')            
+            raise Exception('Wrong data format')           
+        self.get_shape()
+        self.set_hemi() 
 
-    def data_type(self):
+    def _data_type(self):
         if self._source.endswith(('.curv', '.sulc', '.volume', '.thickness', '.area')):
             self.datatype = self._source.split('.')[-1]
-        elif self._source.endswith('.shape.gii'):
-            self.datatype = self._source.split('.')[2]
+        elif self._source.endswith(('.shape.gii', '.func.gii')):
+            self.datatype = self._source.split('.')[-4]
         else:
             raise Exception('wrong data format')  
 
@@ -106,7 +115,18 @@ class Morphology(Region):
 class Function(Region):
     def __init__(self, source):
         super(Function, self).__init__(source)      
-    
+
+    def get_data(self):
+        super(Function, self).get_data()
+        if self._source.endswith(('.dscalar.nii', '.dseries.nii')):
+            self.data = self.data.T
+        elif self._source.endswith(('.mgz', '.mgh')):
+            self.data = self.data.reshape((self.data.shape(0), self.data.shape[-1]))
+        else:
+            pass
+        self.get_shape()
+        self.set_hemi()
+ 
     def get_signals(self):
         pass
 
