@@ -3,8 +3,8 @@ from nibabel import freesurfer
 import numpy as np
 
 class Region(object):
-    def __init__(self, source):
-        self._source = source
+    def __init__(self):
+        pass
 
     def __add__(self):
         pass
@@ -19,11 +19,11 @@ class Region(object):
         if item not in self.__dict__:
  	    return None
 
-    def __call__(self, layer = 1, hemi = None, space_name = 'MNI'):
+    def __call__(self, source, hemisphere = None, layer = 1, space_name = None):
         self.layer = layer
         self.space = space_name
-        self.set_hemi(hemi)
-        self.load_data()
+        self.hemi = hemisphere
+        self.load_data(source)
         if self.morphdata is not None:
             self.morphshape = self.morphdata.shape
         if self.funcdata is not None:
@@ -49,37 +49,44 @@ class Region(object):
     
     @space.setter
     def space(self, space_type):
-        if not isinstance(space_type, str):
-            raise ValueError('space_type must be a string')
-        self._space = space_type
-
-    def set_hemi(self, hemi = None):
-        if ('lh' in self._source.lower()) & ('rh' in self._source.lower()):
-            self.hemi = 'both'
-        elif ('lh' in self._source.lower()) & ('rh' not in self._source.lower()):
-            self.hemi = 'lh'
-        elif ('lh' not in self._source.lower()) & ('rh' in self._source.lower()):
-            self.hemi = 'rh'
+        if self._space is None:
+            if not isinstance(space_type, str):
+                raise ValueError('space_type must be a string')
+            self._space = space_type
         else:
-            self.hemi = hemi
-        
+            if space_type is None:
+                pass
 
-    def load_data(self):
+    @property
+    def hemi(self):
+        return self._hemi
+
+    @hemi.setter
+    def hemi(self, hemisphere):
+        if self._hemi is None:
+            if (hemisphere not in ['left', 'right', 'both']):
+                raise ValueError('Parameter of hemisphere should be left, right or both')
+            self._hemi = hemisphere
+        else:
+            if hemisphere is None:
+                pass
+
+    def load_data(self, source):
         # Geometry
-        if self._source.endswith(('.inflated', '.pial', '.white', '.orig', '.surf.gii2')):
-            self.coordinate, self.face = get_geometry_data(self._source)
+        if source.endswith(('.inflated', '.pial', '.white', '.orig', '.surf.gii')):
+            self.coordinate, self.face = _get_geometry_data(source)
 
         # Morphology
-        elif self._source.endswith(('.curv', '.sulc', '.volume', '.thickness', '.area', '.shape.gii', '.func.gii')):
-            self.morphdata = get_morph_data(self._source)
+        elif source.endswith(('.curv', '.sulc', '.volume', '.thickness', '.area', '.shape.gii', '.func.gii')):
+            self.morphdata = _get_morph_data(source)
 
         # Function
-        elif self._source.endswith(('.dscalar.nii', 'dseries.nii', '.mgz', '.mgh', '.nii.gz', '.nii')):
-            self.img, self.funcdata, self.funcheader  = get_func_data(self._source)
+        elif (source.endswith(('.dscalar.nii', 'dseries.nii', '.mgz', '.mgh', '.nii.gz'))) | (source.endswith('.nii')&(source.count('.')==1)):
+            self.img, self.funcdata, self.funcheader  = _get_func_data(source)
 
         # Label
-        elif self._source.endswith(('.label', '.annot', '.dlabel.nii', '.label.gii')):
-            self.labeldata = get_label_data(self._source) 
+        elif source.endswith(('.label', '.annot', '.dlabel.nii', '.label.gii')):
+            self.labeldata = _get_label_data(source) 
 
     def save_data(self):
         pass
@@ -127,7 +134,7 @@ def _get_func_data(source):
         data = data.reshape((data.shape[0], data.shape[-1]))
     elif source.endswith(('.dscalar.nii', '.dseries.nii')):
         data = data.T
-    elif source.endswith(('.nii.gz', '.nii')):
+    elif (source.endswith('.nii.gz')) | (source.endswith('.nii') & source.count('.') == 1):
         pass
     else:
         raise Exception('Wrong data format')
