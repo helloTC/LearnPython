@@ -71,7 +71,7 @@ class Region(object):
 
         # Morphology
         elif self._source.endswith(('.curv', '.sulc', '.volume', '.thickness', '.area', '.shape.gii', '.func.gii')):
-            self.morphdata = get_morpho_data(self._source)
+            self.morphdata = get_morph_data(self._source)
 
         # Function
         elif self._source.endswith(('.dscalar.nii', 'dseries.nii', '.mgz', '.mgh', '.nii.gz', '.nii')):
@@ -106,7 +106,7 @@ def get_geometry_data(source):
         raise Exception('Wrong data formats')
     return coordinate, face
 
-def get_morpho_data(source):
+def get_morph_data(source):
     """
     """
     if source.endswith(('.curv', '.sulc', '.volume', '.thickness', '.area')):
