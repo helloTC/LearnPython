@@ -41,7 +41,7 @@ class Region(object):
             raise ValueError('Layer value must be an integer!')
         if layer_value < 1 | layer_value > 7:
             raise ValueError('Layer value must be in range of 1-7')        
-        self._layer = value 
+        self._layer = layer_value 
   
     @property 
     def space(self):
@@ -51,7 +51,7 @@ class Region(object):
     def space(self, space_type):
         if not isinstance(space_type, str):
             raise ValueError('space_type must be a string')
-        self._space = space
+        self._space = space_type
 
     def set_hemi(self, hemi = None):
         if ('lh' in self._source.lower()) & ('rh' in self._source.lower()):
@@ -84,7 +84,7 @@ class Region(object):
     def save_data(self):
         pass
 
-def get_geometry_data(source):
+def _get_geometry_data(source):
     """
     Method to load geometry data
     
@@ -106,7 +106,7 @@ def get_geometry_data(source):
         raise Exception('Wrong data formats')
     return coordinate, face
 
-def get_morph_data(source):
+def _get_morph_data(source):
     """
     """
     if source.endswith(('.curv', '.sulc', '.volume', '.thickness', '.area')):
@@ -117,7 +117,7 @@ def get_morph_data(source):
         raise Exception('Wrong data format')
     return data 
 
-def get_func_data():
+def _get_func_data(source):
     """
     """
     img = nib.load(source)
@@ -133,7 +133,7 @@ def get_func_data():
         raise Exception('Wrong data format')
     return img, data, header     
 
-def get_label_data():
+def _get_label_data(source):
     """
     """
     if source.endswith('.label.gii'):
