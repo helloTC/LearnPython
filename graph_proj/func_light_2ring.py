@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from ATT.util import plotfig
 from scipy import stats
 from ATT.iofunc import iofiles
+from os.path import join as pjoin
 
 class light_smallwd(object):
     def __init__(self, nodenum, neighk, p):
@@ -46,8 +47,15 @@ class light_smallwd(object):
 
             green_stablept.add(green_sdpt)
             green_collect.add(green_sdpt)
-            green_neigh = set(nx.neighbors(self._G, green_sdpt))
-            green_collect.update(green_neigh)
+
+            # 1 ring neighbor
+            green_neigh_1ring = nx.neighbors(self._G, green_sdpt)
+            # 2 ring neighbor
+            green_neigh_2ring = set()
+            for pt in green_neigh_1ring:
+                green_neigh_2ring.update(set(nx.neighbors(self._G, pt)))
+
+            green_collect.update(green_neigh_2ring)
 
             inter_collect = green_collect.intersection(blue_collect)
             inter_collect.difference_update(green_stablept.union(blue_stablept))
@@ -74,8 +82,14 @@ class light_smallwd(object):
 
             blue_collect.add(blue_sdpt)
             blue_stablept.add(blue_sdpt)
-            blue_neigh = set(nx.neighbors(self._G, blue_sdpt))
-            blue_collect.update(blue_neigh)
+            
+            # 1 ring neighbour
+            blue_neigh_1ring = nx.neighbors(self._G, blue_sdpt)
+            # 2 ring neighbour
+            blue_neigh_2ring = set()
+            for pt in blue_neigh_1ring:
+                blue_neigh_2ring.update(set(nx.neighbors(self._G, pt)))          
+            blue_collect.update(blue_neigh_2ring)
 
             inter_collect = green_collect.intersection(blue_collect)
             inter_collect.difference_update(green_stablept.union(blue_stablept))
@@ -120,47 +134,16 @@ def _extract_with_degree(G, restpt, option = 'descend'):
     return degree_list[index_degree_list]
 
 if __name__ == '__main__':
-    # This part is to compute difference by strategy to choose seed point with largest degree
-
-    # nodenum = [20, 30, 50, 90, 150, 300]
-    # neighk_perct = np.arange(0.1, 1, 0.1)
-    # p = 0.2
-
-    # numdif_k = []
-    # numdif_n = []
-    
-    # for node in nodenum:
-    #     neighk = [int(i*node) for i in neighk_perct]
-    #     for k in neighk:
-    #         lscls = light_smallwd(node, k, p)
-    #         lscls.pointlight('degree')
-    #         numdif_k.append(lscls.collect_diff())
-    #     numdif_n.append(numdif_k)
-    #     numdif_k = []
-    # numdif_n = np.array(numdif_n)
-# ---------------------------------------------------------
-    # This part is to compute difference in random situation
-    # nodenum = 150
-    # neighk = 110
-    # p = 0.2
-    # n_perm = 5000
-    # numdif = []
-
-    # lscls = light_smallwd(nodenum, neighk, p)
-    # for i in range(n_perm):
-    #     lscls.pointlight('random')
-    #     numdif.append(lscls.collect_diff())
-# ---------------------------------------------------------
-    nodenum = 100
-    neighk = 6
+    n = 160
+    k = 5
     p = 0.9
-    
+
     j = 1
     while 1:
         iter_time = 500
         print('iteration {}'.format(j))
-        j+=1
-        lscls = light_smallwd(nodenum, neighk, p)
+        j += 1 
+        lscls = light_smallwd(n, k, p)
         G = lscls.get_graph()
         diff_hubvsrandom = []
         diff_random = []
@@ -168,53 +151,60 @@ if __name__ == '__main__':
         lscls.pointlight('hubvsworst')
         diff_hubvsworst = lscls.collect_diff()
         for i in range(iter_time):
-            # print('{}'.format(i))
-            lscls.pointlight('hubvsrandom')       
+            lscls.pointlight('hubvsrandom') 
             diff_hubvsrandom.append(lscls.collect_diff())
             lscls.pointlight('random')
-            diff_random.append(lscls.collect_diff()) 
-            diff_random_degree.append(lscls.diff_degree()) 
+            diff_random.append(lscls.collect_diff())
+            diff_random_degree.append(lscls.diff_degree())
         diff_hubvsrandom = np.array(diff_hubvsrandom)
         diff_random = np.array(diff_random)
         p_sig = 1.0*len(diff_hubvsrandom[diff_hubvsrandom>diff_hubvsworst])/len(diff_hubvsrandom)
         if (p_sig<0.01) & (len(diff_hubvsrandom[diff_hubvsrandom<0]) < 0.01*iter_time) & (np.min(diff_hubvsrandom)>-5):
-            break 
+            break      
 
     G_edges = G.edges()
     G_edges = [list(edge) for edge in G_edges]
     gam_cls = surf_tools.GenAdjacentMatrix()
     adjcent = gam_cls.from_edge(G.edges())
+
+    outparpath = '/home/hellotc/workingdir/outfiles/smallwd_light'
     # Save files
-    iocsv_adjcent = iofiles.make_ioinstance('N100_P9_K6_G10_adj.csv')
-    iocsv_edges = iofiles.make_ioinstance('N100_P9_K6_G10_edges.csv')
+    iocsv_adjcent = iofiles.make_ioinstance(pjoin(outparpath, 'N'+str(n)+'_P'+str(p)+'_K'+str(k)+'_G4_adj.csv'))
+    iocsv_edges = iofiles.make_ioinstance(pjoin(outparpath, 'N'+str(n)+'_P'+str(p)+'_K'+str(k)+'_G4_edges.csv'))
     iocsv_adjcent.save(adjcent)
     iocsv_edges.save(np.array(G_edges))
-
-    G_degree = np.array(G.degree().values()) 
+    
+    G_degree = np.array(G.degree().values())
     largenode = np.argsort(G_degree)[-6:]
     pos = nx.random_layout(G)
-    nx.draw(G, pos, node_color = 'r')
+    nx.draw(G, pos, node_color = 'r', with_labels = True)
     plt.show()
     plt.figure()
-    nx.draw(G, pos, node_color = 'r')
+    nx.draw(G, pos, node_color = 'r', with_labels = True)
     nx.draw_networkx_nodes(G, pos, nodelist = largenode.tolist(), node_color = 'b')
     plt.show()
 
-    m = surf_tools.GenAdjacentMatrix()
-    adjmatrix = m.from_edge(G.edges())
     plotmat = plotfig.make_figfunction('mat')
-    plotmat(adjmatrix)    
+    plotmat(adjcent)
 
     plt.figure()
     plt.hist(G_degree)
     plt.show()
 
-    plotviolin = plotfig.make_figfunction('violin') 
-    diff_data = np.concatenate((np.expand_dims(diff_hubvsrandom,axis=-1).T, np.expand_dims(diff_random,axis=-1).T))
+    plotviolin = plotfig.make_figfunction('violin')
+    diff_data = np.concatenate((np.expand_dims(diff_hubvsrandom, axis=-1).T, np.expand_dims(diff_random,axis=-1).T))
     plotviolin(diff_data.T, xticklabels = ['StrategyVsRandom', 'Random'])
-   
-    plothist = plotfig.make_figfunction('hist')
-    plothist(diff_hubvsrandom, [], diff_hubvsworst, p_sig) 
 
+    plothist = plotfig.make_figfunction('hist')
+    plothist(diff_hubvsrandom, [], diff_hubvsworst, p_sig)
+    
     plotcorr = plotfig.make_figfunction('corr')
-    plotcorr(np.array(diff_random), np.array(diff_random_degree), ['Number of lights', 'difference of degree'])
+    plotcorr(np.array(diff_random), np.array(diff_random_degree), ['Number of lights', 'Difference of degree'])
+
+
+
+
+ 
+
+
+
